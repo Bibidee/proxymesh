@@ -433,7 +433,7 @@ class ProxyMesh(gl.Contract):
             sealed_at=0,
             definition_hash="",
         )
-        gl.emit(OntologyCreated(ontology_id, gl.message.sender_address, title=title))
+        OntologyCreated(ontology_id, gl.message.sender_address, title=title).emit()
         return ontology_id
 
     @gl.public.write
@@ -476,7 +476,7 @@ class ProxyMesh(gl.Contract):
         ontology.status = ONTOLOGY_SEALED
         ontology.sealed_at = now_ts()
         self.ontologies[int(ontology_id)] = ontology
-        gl.emit(OntologySealed(int(ontology_id), definition_hash=ontology.definition_hash))
+        OntologySealed(int(ontology_id), definition_hash=ontology.definition_hash).emit()
 
     @gl.public.write
     def set_delegation(self, ontology_id: u256, domain_slot: u8, delegate: Address, expires_at: u256) -> None:
@@ -503,7 +503,7 @@ class ProxyMesh(gl.Contract):
             ontology_id=int(ontology_id), domain_slot=int(domain_slot), delegator=delegator,
             delegate=delegate, created_at=ts, expires_at=expiry, active=True, revision=revision
         )
-        gl.emit(DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate=delegate, expires_at=expiry, revision=revision))
+        DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate=delegate, expires_at=expiry, revision=revision).emit()
 
     @gl.public.write
     def clear_delegation(self, ontology_id: u256, domain_slot: u8) -> None:
@@ -516,7 +516,7 @@ class ProxyMesh(gl.Contract):
         item.active = False
         item.revision = int(item.revision) + 1
         self.delegations[key] = item
-        gl.emit(DelegationCleared(int(ontology_id), int(domain_slot), delegator, revision=int(item.revision)))
+        DelegationCleared(int(ontology_id), int(domain_slot), delegator, revision=int(item.revision)).emit()
 
     @gl.public.write
     def create_proposal(self, ontology_id: u256, title: str, body: str) -> u256:
@@ -535,7 +535,7 @@ class ProxyMesh(gl.Contract):
             status=PROPOSAL_DRAFT, domain_mask=0, classification_hash="",
             classification_reason="", created_at=now_ts(), classified_at=0
         )
-        gl.emit(ProposalCreated(proposal_id, int(ontology_id), gl.message.sender_address, ontology_hash=ontology.definition_hash))
+        ProposalCreated(proposal_id, int(ontology_id), gl.message.sender_address, ontology_hash=ontology.definition_hash).emit()
         return proposal_id
 
     @gl.public.write
@@ -557,7 +557,7 @@ class ProxyMesh(gl.Contract):
             proposal.classification_reason = clean_text(result["reason"], MAX_REASON_LEN)
             proposal.classified_at = now_ts()
             self.proposals[int(proposal_id)] = proposal
-            gl.emit(ProposalClassified(int(proposal_id), 0, status=PROPOSAL_AMBIGUOUS, reason=proposal.classification_reason))
+            ProposalClassified(int(proposal_id), 0, status=PROPOSAL_AMBIGUOUS, reason=proposal.classification_reason).emit()
             return {"status": "AMBIGUOUS", "domain_mask": 0, "reason": proposal.classification_reason}
         proposal.domain_mask = int(result["mask"])
         proposal.classification_reason = clean_text(result["reason"], MAX_REASON_LEN)
@@ -567,7 +567,7 @@ class ProxyMesh(gl.Contract):
             f"{int(proposal_id)}|{proposal.ontology_hash}|{proposal.title}|{proposal.body}|{int(proposal.domain_mask)}"
         )
         self.proposals[int(proposal_id)] = proposal
-        gl.emit(ProposalClassified(int(proposal_id), int(proposal.domain_mask), classification_hash=proposal.classification_hash))
+        ProposalClassified(int(proposal_id), int(proposal.domain_mask), classification_hash=proposal.classification_hash).emit()
         return {
             "status": "CLASSIFIED",
             "domain_mask": int(proposal.domain_mask),

@@ -6,19 +6,35 @@ the model tests remain independent and continue to run in minimal CI.
 """
 
 import json
+import inspect
+import os
 import sys
 
 import pytest
 
 pytest.importorskip("gltest")
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="genlayer-test 0.29.2 Direct Mode loader cannot unlink its temporary stdin file on Windows",
-)
+from gltest.direct import create_address
+
+if sys.platform == "win32":
+    _real_unlink = os.unlink
+
+    def _unlink_after_direct_loader_releases_file(path):
+        try:
+            _real_unlink(path)
+        except PermissionError:
+            pass
+
+    os.unlink = _unlink_after_direct_loader_releases_file
 
 
 def _mesh(direct_deploy):
     return direct_deploy("contracts/proxymesh.py")
+
+
+def _contract_address(mesh, value):
+    """Use the Address type from the injected pinned contract runtime."""
+    address_type = inspect.getmodule(mesh.__class__).Address
+    return address_type(value)
 
 
 def _seed_ontology(mesh, direct_vm, owner):
@@ -37,12 +53,17 @@ def _seed_ontology(mesh, direct_vm, owner):
 def test_real_contract_event_writes_and_terminal_classification(
     direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
 ):
+    direct_alice = create_address("alice")
+    direct_bob = create_address("bob")
+    direct_charlie = create_address("charlie")
     mesh = _mesh(direct_deploy)
     ontology_id = _seed_ontology(mesh, direct_vm, direct_alice)
 
     direct_vm.sender = direct_alice
+    direct_bob = _contract_address(mesh, direct_bob)
     mesh.set_delegation(ontology_id, 0, direct_bob, 0)
     direct_vm.sender = direct_bob
+    direct_charlie = _contract_address(mesh, direct_charlie)
     mesh.set_delegation(ontology_id, 0, direct_charlie, 0)
     direct_vm.sender = direct_alice
     mesh.clear_delegation(ontology_id, 0)
@@ -63,6 +84,7 @@ def test_real_contract_event_writes_and_terminal_classification(
 
 
 def test_real_contract_strict_classification_slots(direct_vm, direct_deploy, direct_alice):
+    direct_alice = create_address("alice")
     mesh = _mesh(direct_deploy)
     ontology_id = _seed_ontology(mesh, direct_vm, direct_alice)
     direct_vm.sender = direct_alice

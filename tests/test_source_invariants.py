@@ -71,6 +71,8 @@ def test_event_topic_safety_and_emission_shape():
             positional = [arg for arg in (init.args.posonlyargs + init.args.args) if arg.arg != "self"]
             assert len(positional) <= 3, f"{node.name} exceeds the three indexed-topic limit"
     assert "DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate=" in MAIN
+    assert "gl.emit(" not in MAIN
+    assert ").emit()" in MAIN
 
 
 def test_ambiguous_and_direct_override_guards_present():
