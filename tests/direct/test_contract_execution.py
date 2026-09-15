@@ -30,7 +30,7 @@ if sys.platform == "win32":
 def _mesh(direct_deploy):
     try:
         return direct_deploy("contracts/proxymesh.py")
-    except (FileNotFoundError, ValueError) as exc:
+    except (FileNotFoundError, ValueError, KeyError) as exc:
         message = str(exc).lower()
         if "runner" in message or "tar" in message or "sdk" in message:
             pytest.skip(f"exact pinned GenVM runner artifact unavailable: {exc}")
