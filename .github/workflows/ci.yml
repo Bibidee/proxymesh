@@ -12,4 +12,5 @@ jobs:
           python-version: '3.12'
       - run: pip install pytest
       - run: python scripts/preflight.py
-      - run: pytest -q
+      - run: python -m compileall -q contracts scripts tests
+      - run: python -m pytest -q

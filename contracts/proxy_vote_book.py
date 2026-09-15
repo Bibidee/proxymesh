@@ -9,6 +9,7 @@ import typing
 ROUTE_DIRECT = 1
 ROUTE_CONVERGED = 2
 ROUTE_SPLIT = 3
+PROPOSAL_CLASSIFIED = 1
 
 
 @gl.contract_interface
@@ -52,7 +53,10 @@ class ProxyVoteBook(gl.Contract):
             raise gl.vm.UserError("EXPECTED: choice must be 1=yes, 2=no, 3=abstain")
         mesh = IProxyMesh(self.proxymesh_address)
         proposal = mesh.view().get_proposal(proposal_id)
-        if str(proposal.get("classification_hash", "")) != str(expected_classification_hash):
+        stored_hash = str(proposal.get("classification_hash", ""))
+        if int(proposal.get("status", -1)) != PROPOSAL_CLASSIFIED or not stored_hash:
+            raise gl.vm.UserError("EXPECTED: proposal must be classified before voting")
+        if stored_hash != str(expected_classification_hash):
             raise gl.vm.UserError("EXPECTED: classification hash mismatch")
         key = self._key(int(proposal_id), voter)
         if key in self.votes:

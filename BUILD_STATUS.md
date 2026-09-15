@@ -16,21 +16,14 @@
 - Studionet 61999 documentation.
 - GenLayer CLI 0.39.1 lock/check scripts.
 
-## Current live-runtime blocker
+## Current verified status
 
-The exact GenLayer CLI 0.39.1 was activated and Studionet 61999 was verified. Fresh deployment attempts reached consensus but finalized with GenVM `contract_error: invalid_contract`; subsequent schema and method calls reported the returned addresses as not found. No deployment address is therefore recorded as canonical, and no live lifecycle evidence is claimed.
+The exact GenLayer CLI 0.39.1 is active on Studionet 61999 using the funded, unlocked deployment account. The pinned runner is `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`. Local preflight, tests, and GenVM lint/validation/schema/typecheck pass for both contracts.
 
-The source was adjusted for the 0.39.1 contract surface: stable `py-genlayer:test` runner alias, legacy-compatible storage/class declarations, deterministic VM timestamps, and ABI-safe unparameterized dictionary return annotations. Local preflight and tests remain green, but a successful hosted GenVM deployment is still required before submission readiness.
+Fresh hosted ProxyMesh deployment attempts still finalize with GenVM `contract_error: invalid_contract`; the returned addresses are not canonical because the authoritative RPC reports no contract code. Hosted bisection is therefore still in progress, and no live deployment or lifecycle evidence is claimed.
 
-## Must still be completed by Imani's agent
+## CI and release evidence
 
-This environment does not hold Imani's funded deployment key and the connected GitHub account has read-only access to `Bibidee/proxymesh`. Therefore these actions are intentionally not fabricated:
+The repository is pushed to `https://github.com/Bibidee/proxymesh`; remote source verification is required for each release commit. GitHub Actions runs the reproducible Python preflight, compile, and model/source-invariant test gate. The GenVM CLI/linter stack is host-provided rather than a reproducible package in this workflow, so its four checks are recorded from the verified deployment environment and are not replaced by a flaky CI installation.
 
-- run the exact CLI 0.39.1 on Imani's machine;
-- verify the live Studionet RPC/network;
-- execute runtime/Direct Mode tests in a real GenLayer environment;
-- deploy both contracts on chain 61999;
-- execute and record the full live lifecycle in `docs/LIVE_TEST_PLAN.md`;
-- create `deployment.json` using real finalized addresses/transactions;
-- update this file with verified evidence only;
-- push the completed repository to `https://github.com/Bibidee/proxymesh`.
+Submission readiness remains blocked until both canonical contracts exist on Studionet, schema and view calls succeed, and the live lifecycle passes.

@@ -1,4 +1,5 @@
 from pathlib import Path
+import ast
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = (ROOT / "contracts" / "proxymesh.py").read_text(encoding="utf-8")
@@ -13,7 +14,25 @@ def test_no_frontend_tree():
 
 
 def test_custom_consensus_present():
-    assert "gl.vm.run_nondet_default" in MAIN
+    tree = ast.parse(MAIN)
+    calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Attribute)
+        and isinstance(node.func.value.value, ast.Name)
+        and node.func.value.value.id == "gl"
+        and node.func.value.attr == "vm"
+        and node.func.attr == "run_nondet"
+    ]
+    assert calls, "executable gl.vm.run_nondet call is required"
+    default_calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "run_nondet_default"
+    ]
+    assert not default_calls
     assert "validator_fn" in MAIN
     assert "gl.nondet.exec_prompt" in MAIN
 
@@ -33,3 +52,10 @@ def test_consumer_proves_cross_contract_use():
     assert "@gl.contract_interface" in CONSUMER
     assert "resolve_authority" in CONSUMER
     assert "DIRECT_OVERRIDE" in CONSUMER
+
+
+def test_consumer_requires_classified_proposal_before_vote():
+    assert "PROPOSAL_CLASSIFIED = 1" in CONSUMER
+    assert 'proposal.get("status", -1)' in CONSUMER
+    assert "proposal must be classified before voting" in CONSUMER
+    assert "classification hash mismatch" in CONSUMER

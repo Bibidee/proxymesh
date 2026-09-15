@@ -372,6 +372,7 @@ class ProxyMesh(gl.Contract):
         route_parts: list[str] = [addr_key(voter)]
         hops = 0
 
+        # Invariant: at most MAX_DELEGATION_DEPTH - 1 delegation edges are resolvable.
         while hops < MAX_DELEGATION_DEPTH:
             current_key = addr_key(current)
             if current_key in seen:
@@ -385,6 +386,8 @@ class ProxyMesh(gl.Contract):
                     "hops": hops,
                     "route_hash": hash_text("|".join(route_parts)),
                 }
+            if hops >= MAX_DELEGATION_DEPTH - 1:
+                return {"status": ROUTE_BROKEN, "representative": str(ZERO_ADDRESS), "hops": hops, "route_hash": hash_text("|".join(route_parts) + "|depth")}
             current = delegation.delegate
             route_parts.append(addr_key(current))
             hops += 1
@@ -397,6 +400,7 @@ class ProxyMesh(gl.Contract):
         current = delegate
         seen: set[str] = {addr_key(delegator)}
         hops = 0
+        # Match resolution: a proposed edge at hop MAX_DELEGATION_DEPTH - 1 overflows.
         while hops < MAX_DELEGATION_DEPTH:
             key = addr_key(current)
             if key in seen:
@@ -405,6 +409,8 @@ class ProxyMesh(gl.Contract):
             next_item = self._active_delegation(ontology_id, slot, current, at_ts)
             if next_item is None:
                 return
+            if hops >= MAX_DELEGATION_DEPTH - 1:
+                raise gl.vm.UserError(f"{ERR_EXPECTED}: delegation path exceeds max depth")
             current = next_item.delegate
             hops += 1
         raise gl.vm.UserError(f"{ERR_EXPECTED}: delegation path exceeds max depth")
