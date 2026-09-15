@@ -34,6 +34,10 @@ def _mesh(direct_deploy):
 def _contract_address(mesh, value):
     """Use the Address type from the injected pinned contract runtime."""
     address_type = inspect.getmodule(mesh.__class__).Address
+    if isinstance(value, address_type):
+        return value
+    if hasattr(value, "as_bytes"):
+        value = value.as_bytes
     return address_type(value)
 
 
