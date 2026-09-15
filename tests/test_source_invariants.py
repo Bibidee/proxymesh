@@ -6,6 +6,14 @@ MAIN = (ROOT / "contracts" / "proxymesh.py").read_text(encoding="utf-8")
 CONSUMER = (ROOT / "contracts" / "proxy_vote_book.py").read_text(encoding="utf-8")
 
 
+def test_genlayer_depends_header_is_first_and_only_leading_comment():
+    expected = '# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }'
+    for name in ("proxymesh.py", "proxy_vote_book.py"):
+        lines = (ROOT / "contracts" / name).read_text(encoding="utf-8").splitlines()
+        assert lines[0] == expected, f"{name} must begin with the pinned Depends declaration"
+        assert len(lines) > 1 and lines[1] == "", f"{name} must not have a second leading comment"
+
+
 def test_no_frontend_tree():
     banned = ["package.json", "vite.config", "next.config", "src/App", "frontend/"]
     listing = "\n".join(str(p.relative_to(ROOT)) for p in ROOT.rglob("*"))
