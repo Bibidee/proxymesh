@@ -6,6 +6,7 @@ from genlayer import *
 import json
 import typing
 from dataclasses import dataclass
+from datetime import datetime
 
 ONTOLOGY_DRAFT = 0
 ONTOLOGY_SEALED = 1
@@ -13,6 +14,7 @@ ONTOLOGY_SEALED = 1
 PROPOSAL_DRAFT = 0
 PROPOSAL_CLASSIFIED = 1
 PROPOSAL_VOID = 2
+PROPOSAL_AMBIGUOUS = 3
 
 CLASSIFIED = 1
 AMBIGUOUS = 2
@@ -117,7 +119,7 @@ class OntologySealed(gl.Event):
 
 
 class DelegationSet(gl.Event):
-    def __init__(self, ontology_id: u256, domain_slot: u8, delegator: Address, delegate: Address, /, **blob): ...
+    def __init__(self, ontology_id: u256, domain_slot: u8, delegator: Address, /, **blob): ...
 
 
 class DelegationCleared(gl.Event):
@@ -133,7 +135,10 @@ class ProposalClassified(gl.Event):
 
 
 def now_ts() -> int:
-    return int(gl.vm.get_timestamp().timestamp())
+    value = str(gl.message_raw["datetime"])
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    return int(datetime.fromisoformat(value).timestamp())
 
 
 def clean_text(value: typing.Any, limit: int) -> str:
@@ -177,18 +182,17 @@ def parse_json_object(raw: typing.Any) -> dict:
 
 def canonical_slots(value: typing.Any, domain_count: int) -> list[int]:
     if not isinstance(value, list):
-        return []
+        raise ValueError("domain_slots must be a list")
     out: list[int] = []
     seen: set[int] = set()
     for item in value:
-        if isinstance(item, bool):
-            continue
-        try:
-            slot = int(item)
-        except Exception:
-            continue
-        if slot < 0 or slot >= int(domain_count) or slot in seen:
-            continue
+        if not isinstance(item, int) or isinstance(item, bool):
+            raise ValueError("domain slot must be an integer")
+        slot = item
+        if slot < 0 or slot >= int(domain_count):
+            raise ValueError("domain slot is out of range")
+        if slot in seen:
+            raise ValueError("domain slots must be unique")
         seen.add(slot)
         out.append(slot)
     out.sort()
@@ -244,18 +248,17 @@ Return ONLY JSON:
 
 def classify_once(title: str, body: str, ontology_title: str, ontology_purpose: str, domains: list[dict]) -> dict:
     domain_count = len(domains)
+    raw = gl.nondet.exec_prompt(
+        classification_prompt(title, body, ontology_title, ontology_purpose, domains),
+        response_format="json",
+    )
     try:
-        raw = gl.nondet.exec_prompt(
-            classification_prompt(title, body, ontology_title, ontology_purpose, domains),
-            response_format="json",
-        )
         parsed = parse_json_object(raw)
-    except Exception:
-        return {"verdict": AMBIGUOUS, "mask": 0, "reason": "classification could not be parsed"}
-
-    verdict_text = str(parsed.get("verdict", "AMBIGUOUS")).strip().upper()
-    slots = canonical_slots(parsed.get("domain_slots", []), domain_count)
-    reason = clean_text(parsed.get("reason", ""), MAX_REASON_LEN)
+        verdict_text = str(parsed.get("verdict", "AMBIGUOUS")).strip().upper()
+        slots = canonical_slots(parsed.get("domain_slots", []), domain_count)
+        reason = clean_text(parsed.get("reason", ""), MAX_REASON_LEN)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {"verdict": AMBIGUOUS, "mask": 0, "reason": "classification could not be parsed safely"}
 
     if verdict_text == "CLASSIFIED" and len(slots) > 0:
         return {"verdict": CLASSIFIED, "mask": slots_to_mask(slots), "reason": reason}
@@ -303,8 +306,8 @@ def consensus_classification(title: str, body: str, ontology_title: str, ontolog
             and int(candidate.get("mask")) == int(independent.get("mask"))
         )
 
-    # GenLayer CLI 0.39.1 exposes gl.vm.run_nondet_default as the run_nondet equivalence runner.
-    result = gl.vm.run_nondet(leader_fn, validator_fn)
+    # The pinned runner supports unsafe custom validation; validator failures are disagreement.
+    result = gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
     if not valid_classification(result, domain_count):
         raise gl.vm.UserError(f"{ERR_EXPECTED}: consensus returned invalid classification")
     return result
@@ -398,9 +401,8 @@ class ProxyMesh(gl.Contract):
             raise gl.vm.UserError(f"{ERR_EXPECTED}: self-delegation is not allowed")
         current = delegate
         seen: set[str] = {addr_key(delegator)}
-        hops = 0
-        # Match resolution: a proposed edge at hop MAX_DELEGATION_DEPTH - 1 overflows.
-        while hops < MAX_DELEGATION_DEPTH:
+        edges = 1  # count the newly proposed edge before following existing edges
+        while True:
             key = addr_key(current)
             if key in seen:
                 raise gl.vm.UserError(f"{ERR_EXPECTED}: delegation would create a cycle")
@@ -408,11 +410,10 @@ class ProxyMesh(gl.Contract):
             next_item = self._active_delegation(ontology_id, slot, current, at_ts)
             if next_item is None:
                 return
-            if hops >= MAX_DELEGATION_DEPTH - 1:
+            if edges >= MAX_DELEGATION_DEPTH - 1:
                 raise gl.vm.UserError(f"{ERR_EXPECTED}: delegation path exceeds max depth")
             current = next_item.delegate
-            hops += 1
-        raise gl.vm.UserError(f"{ERR_EXPECTED}: delegation path exceeds max depth")
+            edges += 1
 
     @gl.public.write
     def create_ontology(self, title: str, purpose: str) -> u256:
@@ -502,7 +503,7 @@ class ProxyMesh(gl.Contract):
             ontology_id=int(ontology_id), domain_slot=int(domain_slot), delegator=delegator,
             delegate=delegate, created_at=ts, expires_at=expiry, active=True, revision=revision
         )
-        gl.emit(DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate, expires_at=expiry, revision=revision))
+        gl.emit(DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate=delegate, expires_at=expiry, revision=revision))
 
     @gl.public.write
     def clear_delegation(self, ontology_id: u256, domain_slot: u8) -> None:
@@ -551,7 +552,13 @@ class ProxyMesh(gl.Contract):
             domains.append({"slot": slot, "label": item.label, "description": item.description})
         result = consensus_classification(proposal.title, proposal.body, ontology.title, ontology.purpose, domains)
         if int(result["verdict"]) != CLASSIFIED:
-            return {"status": "AMBIGUOUS", "domain_mask": 0, "reason": str(result["reason"])}
+            proposal.status = PROPOSAL_AMBIGUOUS
+            proposal.domain_mask = 0
+            proposal.classification_reason = clean_text(result["reason"], MAX_REASON_LEN)
+            proposal.classified_at = now_ts()
+            self.proposals[int(proposal_id)] = proposal
+            gl.emit(ProposalClassified(int(proposal_id), 0, status=PROPOSAL_AMBIGUOUS, reason=proposal.classification_reason))
+            return {"status": "AMBIGUOUS", "domain_mask": 0, "reason": proposal.classification_reason}
         proposal.domain_mask = int(result["mask"])
         proposal.classification_reason = clean_text(result["reason"], MAX_REASON_LEN)
         proposal.classified_at = now_ts()

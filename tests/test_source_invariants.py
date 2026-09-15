@@ -31,9 +31,10 @@ def test_custom_consensus_present():
         and isinstance(node.func.value.value, ast.Name)
         and node.func.value.value.id == "gl"
         and node.func.value.attr == "vm"
-        and node.func.attr == "run_nondet"
+        and node.func.attr in {"run_nondet", "run_nondet_unsafe"}
     ]
     assert calls, "executable gl.vm.run_nondet call is required"
+    assert "gl.vm.run_nondet_unsafe(leader_fn, validator_fn)" in MAIN
     default_calls = [
         node for node in ast.walk(tree)
         if isinstance(node, ast.Call)
@@ -43,6 +44,8 @@ def test_custom_consensus_present():
     assert not default_calls
     assert "validator_fn" in MAIN
     assert "gl.nondet.exec_prompt" in MAIN
+    assert "independent = classify_once" in MAIN
+    assert "except Exception" not in MAIN
 
 
 def test_semantic_output_is_bounded():
@@ -54,6 +57,27 @@ def test_semantic_output_is_bounded():
 def test_cycle_and_depth_protection_present():
     assert "delegation would create a cycle" in MAIN
     assert "MAX_DELEGATION_DEPTH" in MAIN
+    assert "edges = 1" in MAIN
+    assert "PROPOSAL_AMBIGUOUS = 3" in MAIN
+
+
+def test_event_topic_safety_and_emission_shape():
+    tree = ast.parse(MAIN)
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and any(
+            isinstance(base, ast.Attribute) and base.attr == "Event" for base in node.bases
+        ):
+            init = next(item for item in node.body if isinstance(item, ast.FunctionDef) and item.name == "__init__")
+            positional = [arg for arg in (init.args.posonlyargs + init.args.args) if arg.arg != "self"]
+            assert len(positional) <= 3, f"{node.name} exceeds the three indexed-topic limit"
+    assert "DelegationSet(int(ontology_id), int(domain_slot), delegator, delegate=" in MAIN
+
+
+def test_ambiguous_and_direct_override_guards_present():
+    assert "proposal.status = PROPOSAL_AMBIGUOUS" in MAIN
+    assert "existing.caster == voter" in CONSUMER
+    assert "DIRECT_OVERRIDE" in CONSUMER
+    assert "tally underflow" in CONSUMER
 
 
 def test_consumer_proves_cross_contract_use():

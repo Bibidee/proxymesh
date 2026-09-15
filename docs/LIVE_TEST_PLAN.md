@@ -29,6 +29,8 @@ Create a proposal materially affecting TREASURY + SECURITY. Classify it. Verify 
 
 Carol calls the consumer to cast Alice's vote. It must succeed.
 
+Also prove that 15 active delegation edges resolve, while a write that would create a 16th active edge is rejected before storage mutation.
+
 ## Lifecycle B — split delegation fails closed
 
 Change Alice's SECURITY delegation to Dave. Create/classify another TREASURY + SECURITY proposal. Resolution must return split authority. Carol attempting to cast for Alice must fail. Alice voting directly must succeed.
@@ -40,6 +42,10 @@ Attempt A→B followed by B→A in one domain. The second write must fail.
 ## Lifecycle D — expiry/revocation
 
 Create a short-lived delegation or revoke an edge. Confirm subsequent resolution ignores it.
+
+## Lifecycle E — terminal ambiguity and events
+
+Execute classification with mocked `AMBIGUOUS` output and verify the proposal becomes terminal, cannot be classified again, and cannot be voted on. Execute every event-producing write and inspect the resulting execution events.
 
 ## Evidence to save
 

@@ -46,6 +46,34 @@ class ProxyVoteBook(gl.Contract):
     def _key(self, proposal_id: int, voter: Address) -> str:
         return f"{int(proposal_id)}:{str(voter).lower()}"
 
+    def _increment(self, proposal_id: int, choice: int) -> None:
+        if int(choice) == 1:
+            current = int(self.yes_count[int(proposal_id)]) if int(proposal_id) in self.yes_count else 0
+            self.yes_count[int(proposal_id)] = current + 1
+        elif int(choice) == 2:
+            current = int(self.no_count[int(proposal_id)]) if int(proposal_id) in self.no_count else 0
+            self.no_count[int(proposal_id)] = current + 1
+        else:
+            current = int(self.abstain_count[int(proposal_id)]) if int(proposal_id) in self.abstain_count else 0
+            self.abstain_count[int(proposal_id)] = current + 1
+
+    def _decrement(self, proposal_id: int, choice: int) -> None:
+        if int(choice) == 1:
+            current = int(self.yes_count[int(proposal_id)]) if int(proposal_id) in self.yes_count else 0
+            if current == 0:
+                raise gl.vm.UserError("EXPECTED: tally underflow")
+            self.yes_count[int(proposal_id)] = current - 1
+        elif int(choice) == 2:
+            current = int(self.no_count[int(proposal_id)]) if int(proposal_id) in self.no_count else 0
+            if current == 0:
+                raise gl.vm.UserError("EXPECTED: tally underflow")
+            self.no_count[int(proposal_id)] = current - 1
+        else:
+            current = int(self.abstain_count[int(proposal_id)]) if int(proposal_id) in self.abstain_count else 0
+            if current == 0:
+                raise gl.vm.UserError("EXPECTED: tally underflow")
+            self.abstain_count[int(proposal_id)] = current - 1
+
     @gl.public.write
     def cast_vote(self, proposal_id: u256, voter: Address, expected_classification_hash: str, choice: u8) -> None:
         if int(choice) not in (1, 2, 3):
@@ -58,9 +86,12 @@ class ProxyVoteBook(gl.Contract):
         if stored_hash != str(expected_classification_hash):
             raise gl.vm.UserError("EXPECTED: classification hash mismatch")
         key = self._key(int(proposal_id), voter)
-        if key in self.votes:
-            raise gl.vm.UserError("EXPECTED: voter already represented in this ballot")
         caller = gl.message.sender_address
+        if key in self.votes:
+            existing = self.votes[key]
+            if caller != voter or existing.caster == voter:
+                raise gl.vm.UserError("EXPECTED: voter already represented in this ballot")
+            self._decrement(int(proposal_id), int(existing.choice))
         route_commitment = "DIRECT_OVERRIDE"
         if caller != voter:
             route = mesh.view().resolve_authority(proposal_id, voter)
@@ -73,15 +104,7 @@ class ProxyVoteBook(gl.Contract):
             voter=voter, caster=caller, proposal_id=int(proposal_id), choice=int(choice),
             classification_hash=str(expected_classification_hash), route_commitment=route_commitment
         )
-        if int(choice) == 1:
-            current = int(self.yes_count[int(proposal_id)]) if int(proposal_id) in self.yes_count else 0
-            self.yes_count[int(proposal_id)] = current + 1
-        elif int(choice) == 2:
-            current = int(self.no_count[int(proposal_id)]) if int(proposal_id) in self.no_count else 0
-            self.no_count[int(proposal_id)] = current + 1
-        else:
-            current = int(self.abstain_count[int(proposal_id)]) if int(proposal_id) in self.abstain_count else 0
-            self.abstain_count[int(proposal_id)] = current + 1
+        self._increment(int(proposal_id), int(choice))
 
     @gl.public.view
     def get_tally(self, proposal_id: u256) -> dict[str, int]:

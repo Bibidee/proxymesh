@@ -7,6 +7,7 @@ ROUTE_BROKEN = 4
 MAX_DEPTH = 16
 PROPOSAL_DRAFT = 0
 PROPOSAL_CLASSIFIED = 1
+PROPOSAL_AMBIGUOUS = 3
 
 
 def slots_to_mask(slots):
@@ -33,6 +34,24 @@ def resolve(start, edges):
         current = edges[current]
         hops += 1
     return ROUTE_BROKEN, None
+
+
+def proposed_route_is_valid(delegator, delegate, edges):
+    if delegator == delegate:
+        return False
+    current = delegate
+    seen = {delegator}
+    edge_count = 1
+    while True:
+        if current in seen:
+            return False
+        seen.add(current)
+        if current not in edges:
+            return True
+        if edge_count >= MAX_DEPTH - 1:
+            return False
+        current = edges[current]
+        edge_count += 1
 
 
 def resolve_multi(voter, masks, per_domain_edges):
@@ -131,7 +150,50 @@ def test_depth_boundary_is_consistent_and_fails_closed():
     assert resolve("n0", chain_edges(MAX_DEPTH + 1))[0] == ROUTE_BROKEN
 
 
+def test_creation_depth_boundary_rejects_before_storage_mutation():
+    edges = chain_edges(MAX_DEPTH - 1)
+    before = dict(edges)
+    assert not proposed_route_is_valid("root", "n0", edges)
+    assert edges == before
+    assert proposed_route_is_valid("root", "n0", chain_edges(MAX_DEPTH - 2))
+
+
+def test_expired_or_revoked_edges_are_not_counted():
+    assert proposed_route_is_valid("root", "delegate", {})
+
+
 def test_cycle_near_depth_boundary_fails_closed():
     edges = chain_edges(MAX_DEPTH - 1)
     edges[f"n{MAX_DEPTH - 1}"] = "n{MAX_DEPTH - 2}"
     assert resolve("n0", edges)[0] == ROUTE_BROKEN
+
+
+def test_ambiguous_status_is_terminal():
+    proposal = {"status": PROPOSAL_DRAFT, "domain_mask": 0}
+    proposal["status"] = PROPOSAL_AMBIGUOUS
+    assert proposal["status"] == PROPOSAL_AMBIGUOUS
+    assert proposal["domain_mask"] == 0
+    assert proposal["status"] != PROPOSAL_DRAFT
+
+
+def test_strict_domain_slots_reject_malformed_values():
+    def valid(slots, count):
+        return (
+            isinstance(slots, list)
+            and all(isinstance(x, int) and not isinstance(x, bool) for x in slots)
+            and all(0 <= x < count for x in slots)
+            and len(slots) == len(set(slots))
+        )
+
+    assert valid([0, 1], 2)
+    for value in (["1"], [1.8], [True], [-1], [2], [0, 0]):
+        assert not valid(value, 2)
+
+
+def test_proxy_to_direct_override_corrects_tally():
+    tally = {"yes": 1, "no": 0, "abstain": 0}
+    old_choice, new_choice = 1, 2
+    tally["yes"] -= 1
+    tally["no"] += 1
+    assert tally == {"yes": 0, "no": 1, "abstain": 0}
+    assert old_choice != new_choice

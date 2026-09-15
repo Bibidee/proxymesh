@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pytest
+      - run: pip install -r requirements-test.txt
       - run: python scripts/preflight.py
       - run: python -m compileall -q contracts scripts tests
       - run: python -m pytest -q

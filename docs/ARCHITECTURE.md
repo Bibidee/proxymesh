@@ -10,7 +10,7 @@ ProxyMesh is a contract-only semantic liquid-delegation primitive. It deliberate
 4. A proposal is created against one exact ontology hash.
 5. GenLayer consensus classifies the proposal into a bounded domain bitmask. Validators independently rerun the classification and must agree on the exact bitmask.
 6. ProxyMesh resolves each implicated domain's delegation route deterministically.
-7. If all routes converge to one representative, a consumer may accept that representative. If routes split, ProxyMesh fails closed and recommends a direct vote.
+7. If all routes converge to one representative, a consumer may accept that representative. If routes split, ProxyMesh fails closed and recommends a direct vote. A direct voter can replace an earlier proxy receipt exactly once, with a compensating tally decrement; direct receipts and proxy-after-direct attempts remain rejected.
 
 ## Why the LLM has limited power
 
@@ -20,7 +20,7 @@ The model cannot create domains, choose delegates, cast votes, change weights or
 
 `contracts/proxy_vote_book.py` is intentionally small. It demonstrates the primitive boundary:
 
-- a voter can always vote directly, overriding delegation;
+- a voter can replace an earlier proxy receipt with a direct vote, including a different choice, and the consumer corrects both tallies;
 - otherwise a caller may represent the voter only when `resolve_authority()` returns a converged route;
 - the consumer pins the proposal `classification_hash` to prevent semantic substitution;
 - one voter can only be represented once per proposal.
