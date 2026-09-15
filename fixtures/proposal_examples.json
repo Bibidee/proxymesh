@@ -1,0 +1,14 @@
+[
+  {
+    "name": "treasury_security",
+    "title": "Fund external security audit",
+    "body": "Authorize 40 GEN from the treasury to commission an external audit of the protocol's emergency controls.",
+    "expected_domains": ["TREASURY", "SECURITY"]
+  },
+  {
+    "name": "protocol_only",
+    "title": "Change finalization parameter",
+    "body": "Adopt the proposed change to the protocol finalization parameter without changing treasury or operational permissions.",
+    "expected_domains": ["PROTOCOL"]
+  }
+]
