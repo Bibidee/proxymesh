@@ -1,4 +1,4 @@
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 # v0.1.0
 
 import genlayer as gl
@@ -11,7 +11,7 @@ ROUTE_CONVERGED = 2
 ROUTE_SPLIT = 3
 
 
-@gl.contract.interface
+@gl.contract_interface
 class IProxyMesh:
     class View:
         def get_proposal(self, proposal_id: u256) -> dict: ...

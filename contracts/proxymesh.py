@@ -1,4 +1,4 @@
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 # v0.1.0
 
 import genlayer as gl
@@ -87,7 +87,7 @@ class Proposal:
     classified_at: u256
 
 
-@gl.contract.interface
+@gl.contract_interface
 class IProxyMesh:
     class View:
         def get_ontology(self, ontology_id: u256) -> dict: ...
@@ -109,27 +109,27 @@ class IProxyMesh:
         def void_draft_proposal(self, proposal_id: u256) -> None: ...
 
 
-class OntologyCreated(gl.chain.Event):
+class OntologyCreated(gl.Event):
     def __init__(self, ontology_id: u256, owner: Address, /, **blob): ...
 
 
-class OntologySealed(gl.chain.Event):
+class OntologySealed(gl.Event):
     def __init__(self, ontology_id: u256, /, **blob): ...
 
 
-class DelegationSet(gl.chain.Event):
+class DelegationSet(gl.Event):
     def __init__(self, ontology_id: u256, domain_slot: u8, delegator: Address, delegate: Address, /, **blob): ...
 
 
-class DelegationCleared(gl.chain.Event):
+class DelegationCleared(gl.Event):
     def __init__(self, ontology_id: u256, domain_slot: u8, delegator: Address, /, **blob): ...
 
 
-class ProposalCreated(gl.chain.Event):
+class ProposalCreated(gl.Event):
     def __init__(self, proposal_id: u256, ontology_id: u256, proposer: Address, /, **blob): ...
 
 
-class ProposalClassified(gl.chain.Event):
+class ProposalClassified(gl.Event):
     def __init__(self, proposal_id: u256, domain_mask: u256, /, **blob): ...
 
 

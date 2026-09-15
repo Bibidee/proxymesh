@@ -30,6 +30,6 @@ def test_cycle_and_depth_protection_present():
 
 
 def test_consumer_proves_cross_contract_use():
-    assert "@gl.contract.interface" in CONSUMER
+    assert "@gl.contract_interface" in CONSUMER
     assert "resolve_authority" in CONSUMER
     assert "DIRECT_OVERRIDE" in CONSUMER
