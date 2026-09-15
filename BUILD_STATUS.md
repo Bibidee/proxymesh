@@ -16,6 +16,12 @@
 - Studionet 61999 documentation.
 - GenLayer CLI 0.39.1 lock/check scripts.
 
+## Current live-runtime blocker
+
+The exact GenLayer CLI 0.39.1 was activated and Studionet 61999 was verified. Fresh deployment attempts reached consensus but finalized with GenVM `contract_error: invalid_contract`; subsequent schema and method calls reported the returned addresses as not found. No deployment address is therefore recorded as canonical, and no live lifecycle evidence is claimed.
+
+The source was adjusted for the 0.39.1 contract surface: stable `py-genlayer:test` runner alias, legacy-compatible storage/class declarations, deterministic VM timestamps, and ABI-safe unparameterized dictionary return annotations. Local preflight and tests remain green, but a successful hosted GenVM deployment is still required before submission readiness.
+
 ## Must still be completed by Imani's agent
 
 This environment does not hold Imani's funded deployment key and the connected GitHub account has read-only access to `Bibidee/proxymesh`. Therefore these actions are intentionally not fabricated:

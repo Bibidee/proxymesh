@@ -1,13 +1,11 @@
 # v0.1.0
-# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
+# { "Depends": "py-genlayer:test" }
 
 import genlayer as gl
-from genlayer.types import *
-from genlayer.storage import TreeMap
+from genlayer import *
 
 import json
 import typing
-from datetime import datetime, timezone
 from dataclasses import dataclass
 
 ONTOLOGY_DRAFT = 0
@@ -38,7 +36,7 @@ ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 ERR_EXPECTED = "EXPECTED"
 
 
-@gl.storage.allow
+@allow_storage
 @dataclass
 class Ontology:
     owner: Address
@@ -51,7 +49,7 @@ class Ontology:
     definition_hash: str
 
 
-@gl.storage.allow
+@allow_storage
 @dataclass
 class Domain:
     ontology_id: u256
@@ -60,7 +58,7 @@ class Domain:
     description: str
 
 
-@gl.storage.allow
+@allow_storage
 @dataclass
 class Delegation:
     ontology_id: u256
@@ -73,7 +71,7 @@ class Delegation:
     revision: u256
 
 
-@gl.storage.allow
+@allow_storage
 @dataclass
 class Proposal:
     proposer: Address
@@ -92,13 +90,13 @@ class Proposal:
 @gl.contract.interface
 class IProxyMesh:
     class View:
-        def get_ontology(self, ontology_id: u256) -> dict[str, typing.Any]: ...
-        def get_domain(self, ontology_id: u256, slot: u8) -> dict[str, typing.Any]: ...
+        def get_ontology(self, ontology_id: u256) -> dict: ...
+        def get_domain(self, ontology_id: u256, slot: u8) -> dict: ...
         def current_ontology_hash(self, ontology_id: u256) -> str: ...
-        def get_proposal(self, proposal_id: u256) -> dict[str, typing.Any]: ...
-        def get_delegation(self, ontology_id: u256, domain_slot: u8, delegator: Address) -> dict[str, typing.Any]: ...
-        def resolve_domain(self, ontology_id: u256, domain_slot: u8, voter: Address) -> dict[str, typing.Any]: ...
-        def resolve_authority(self, proposal_id: u256, voter: Address) -> dict[str, typing.Any]: ...
+        def get_proposal(self, proposal_id: u256) -> dict: ...
+        def get_delegation(self, ontology_id: u256, domain_slot: u8, delegator: Address) -> dict: ...
+        def resolve_domain(self, ontology_id: u256, domain_slot: u8, voter: Address) -> dict: ...
+        def resolve_authority(self, proposal_id: u256, voter: Address) -> dict: ...
 
     class Write:
         def create_ontology(self, title: str, purpose: str) -> u256: ...
@@ -107,7 +105,7 @@ class IProxyMesh:
         def set_delegation(self, ontology_id: u256, domain_slot: u8, delegate: Address, expires_at: u256) -> None: ...
         def clear_delegation(self, ontology_id: u256, domain_slot: u8) -> None: ...
         def create_proposal(self, ontology_id: u256, title: str, body: str) -> u256: ...
-        def classify_proposal(self, proposal_id: u256) -> dict[str, typing.Any]: ...
+        def classify_proposal(self, proposal_id: u256) -> dict: ...
         def void_draft_proposal(self, proposal_id: u256) -> None: ...
 
 
@@ -136,7 +134,7 @@ class ProposalClassified(gl.chain.Event):
 
 
 def now_ts() -> int:
-    return int(datetime.now(timezone.utc).timestamp())
+    return int(gl.vm.get_timestamp().timestamp())
 
 
 def clean_text(value: typing.Any, limit: int) -> str:
@@ -306,13 +304,14 @@ def consensus_classification(title: str, body: str, ontology_title: str, ontolog
             and int(candidate.get("mask")) == int(independent.get("mask"))
         )
 
-    result = gl.vm.run_nondet_default(leader_fn, validator_fn)
+    # GenLayer CLI 0.39.1 exposes gl.vm.run_nondet_default as the run_nondet equivalence runner.
+    result = gl.vm.run_nondet(leader_fn, validator_fn)
     if not valid_classification(result, domain_count):
         raise gl.vm.UserError(f"{ERR_EXPECTED}: consensus returned invalid classification")
     return result
 
 
-class ProxyMesh(gl.contract.Contract):
+class ProxyMesh(gl.Contract):
     """Semantic liquid-delegation routing primitive for governance consumers."""
 
     ontologies: TreeMap[u256, Ontology]
@@ -534,7 +533,7 @@ class ProxyMesh(gl.contract.Contract):
         return proposal_id
 
     @gl.public.write
-    def classify_proposal(self, proposal_id: u256) -> dict[str, typing.Any]:
+    def classify_proposal(self, proposal_id: u256) -> dict:
         proposal = self._proposal(int(proposal_id))
         if int(proposal.status) != PROPOSAL_DRAFT:
             raise gl.vm.UserError(f"{ERR_EXPECTED}: proposal is not draft")
@@ -575,7 +574,7 @@ class ProxyMesh(gl.contract.Contract):
         self.proposals[int(proposal_id)] = proposal
 
     @gl.public.view
-    def get_ontology(self, ontology_id: u256) -> dict[str, typing.Any]:
+    def get_ontology(self, ontology_id: u256) -> dict:
         item = self._ontology(int(ontology_id))
         return {
             "owner": str(item.owner), "title": item.title, "purpose": item.purpose,
@@ -585,7 +584,7 @@ class ProxyMesh(gl.contract.Contract):
         }
 
     @gl.public.view
-    def get_domain(self, ontology_id: u256, slot: u8) -> dict[str, typing.Any]:
+    def get_domain(self, ontology_id: u256, slot: u8) -> dict:
         item = self._domain(int(ontology_id), int(slot))
         return {"ontology_id": int(item.ontology_id), "slot": int(item.slot), "label": item.label, "description": item.description}
 
@@ -594,7 +593,7 @@ class ProxyMesh(gl.contract.Contract):
         return self._ontology_hash(int(ontology_id))
 
     @gl.public.view
-    def get_proposal(self, proposal_id: u256) -> dict[str, typing.Any]:
+    def get_proposal(self, proposal_id: u256) -> dict:
         item = self._proposal(int(proposal_id))
         return {
             "proposer": str(item.proposer), "ontology_id": int(item.ontology_id),
@@ -607,7 +606,7 @@ class ProxyMesh(gl.contract.Contract):
         }
 
     @gl.public.view
-    def get_delegation(self, ontology_id: u256, domain_slot: u8, delegator: Address) -> dict[str, typing.Any]:
+    def get_delegation(self, ontology_id: u256, domain_slot: u8, delegator: Address) -> dict:
         self._domain(int(ontology_id), int(domain_slot))
         key = delegation_key(int(ontology_id), int(domain_slot), delegator)
         if key not in self.delegations:
@@ -620,11 +619,11 @@ class ProxyMesh(gl.contract.Contract):
         }
 
     @gl.public.view
-    def resolve_domain(self, ontology_id: u256, domain_slot: u8, voter: Address) -> dict[str, typing.Any]:
+    def resolve_domain(self, ontology_id: u256, domain_slot: u8, voter: Address) -> dict:
         return self._resolve_domain_internal(int(ontology_id), int(domain_slot), voter, now_ts())
 
     @gl.public.view
-    def resolve_authority(self, proposal_id: u256, voter: Address) -> dict[str, typing.Any]:
+    def resolve_authority(self, proposal_id: u256, voter: Address) -> dict:
         proposal = self._proposal(int(proposal_id))
         if int(proposal.status) != PROPOSAL_CLASSIFIED:
             return {"status": ROUTE_BROKEN, "representative": str(ZERO_ADDRESS), "reason": "proposal not classified"}

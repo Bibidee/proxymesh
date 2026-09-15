@@ -1,9 +1,8 @@
 # v0.1.0
-# { "Depends": "py-genlayer:5jycge4q8k23462jtb0b9fyey1s9qz928sz2nbrd9mg4sxqg2qng" }
+# { "Depends": "py-genlayer:test" }
 
 import genlayer as gl
-from genlayer.types import *
-from genlayer.storage import TreeMap
+from genlayer import *
 from dataclasses import dataclass
 import typing
 
@@ -15,13 +14,13 @@ ROUTE_SPLIT = 3
 @gl.contract.interface
 class IProxyMesh:
     class View:
-        def get_proposal(self, proposal_id: u256) -> dict[str, typing.Any]: ...
-        def resolve_authority(self, proposal_id: u256, voter: Address) -> dict[str, typing.Any]: ...
+        def get_proposal(self, proposal_id: u256) -> dict: ...
+        def resolve_authority(self, proposal_id: u256, voter: Address) -> dict: ...
     class Write:
         pass
 
 
-@gl.storage.allow
+@allow_storage
 @dataclass
 class VoteReceipt:
     voter: Address
@@ -32,7 +31,7 @@ class VoteReceipt:
     route_commitment: str
 
 
-class ProxyVoteBook(gl.contract.Contract):
+class ProxyVoteBook(gl.Contract):
     """Minimal consumer: direct vote overrides delegation; otherwise only converged proxy authority may cast."""
 
     proxymesh_address: Address
