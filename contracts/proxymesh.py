@@ -541,6 +541,8 @@ class ProxyMesh(gl.Contract):
     @gl.public.write
     def classify_proposal(self, proposal_id: u256) -> dict:
         proposal = self._proposal(int(proposal_id))
+        if proposal.proposer != gl.message.sender_address:
+            raise gl.vm.UserError(f"{ERR_EXPECTED}: proposer only")
         if int(proposal.status) != PROPOSAL_DRAFT:
             raise gl.vm.UserError(f"{ERR_EXPECTED}: proposal is not draft")
         ontology = self._ontology(int(proposal.ontology_id))

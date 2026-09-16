@@ -4,10 +4,12 @@
 
 - Ontologies are mutable only before sealing.
 - Proposal classification is pinned to the sealed ontology hash.
+- Classification is proposer-triggered; unrelated accounts cannot consume a proposal's one classification attempt.
 - Semantic classification is bounded to at most 12 existing domain slots.
 - Validators independently rerun classification and require exact verdict + bitmask agreement.
 - Provider/runtime failures propagate instead of being converted into semantic ambiguity.
 - An ambiguous classification is terminal and cannot be rerolled.
+- Terminal classified or ambiguous proposals cannot be triggered again by the proposer or any unrelated account.
 - Delegation cannot self-reference or create a cycle at creation time.
 - Delegation traversal is depth-bounded to 15 active edges and fails closed on broken/cyclic routes.
 - Expired or revoked edges are ignored.

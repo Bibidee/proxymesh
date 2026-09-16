@@ -9,6 +9,7 @@ ROUTE_DIRECT = 1
 ROUTE_CONVERGED = 2
 ROUTE_SPLIT = 3
 PROPOSAL_CLASSIFIED = 1
+ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 
 
 @gl.contract_interface
@@ -41,6 +42,8 @@ class ProxyVoteBook(gl.Contract):
     abstain_count: TreeMap[u256, u256]
 
     def __init__(self, proxymesh_address: Address):
+        if proxymesh_address == ZERO_ADDRESS:
+            raise gl.vm.UserError("EXPECTED: ProxyMesh address cannot be zero")
         self.proxymesh_address = proxymesh_address
 
     def _key(self, proposal_id: int, voter: Address) -> str:

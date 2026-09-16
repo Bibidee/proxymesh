@@ -82,6 +82,23 @@ def test_ambiguous_and_direct_override_guards_present():
     assert "tally underflow" in CONSUMER
 
 
+def test_classification_is_proposer_only():
+    assert "if proposal.proposer != gl.message.sender_address" in MAIN
+    assert "EXPECTED}: proposer only" in MAIN
+
+
+def test_consumer_rejects_zero_dependency():
+    assert 'ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")' in CONSUMER
+    assert "proxymesh_address == ZERO_ADDRESS" in CONSUMER
+
+
+def test_ci_contains_ast_safety_gate_and_pinned_runner():
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    assert "GENVM_VERSION: v0.2.12" in ci
+    assert "genvm-lint check contracts/proxymesh.py" in ci
+    assert "genvm-lint check contracts/proxy_vote_book.py" in ci
+
+
 def test_consumer_proves_cross_contract_use():
     assert "@gl.contract_interface" in CONSUMER
     assert "resolve_authority" in CONSUMER

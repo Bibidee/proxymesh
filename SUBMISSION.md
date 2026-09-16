@@ -8,4 +8,4 @@ The model cannot create domains, select delegates, cast votes, assign weights or
 
 Network target: Studionet, chain ID 61999. Required CLI: 0.39.1. No frontend.
 
-Release status: not submission ready until deterministic and real GenLayer execution tests pass and both canonical contracts are independently verified on Studionet.
+Release status: NOT SUBMISSION READY until deterministic and real GenLayer execution tests pass and both canonical contracts are independently verified on Studionet with the full lifecycle completed.

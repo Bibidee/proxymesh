@@ -45,7 +45,9 @@ Create a short-lived delegation or revoke an edge. Confirm subsequent resolution
 
 ## Lifecycle E — terminal ambiguity and events
 
-Execute classification with mocked `AMBIGUOUS` output and verify the proposal becomes terminal, cannot be classified again, and cannot be voted on. Execute every event-producing write and inspect the resulting execution events.
+On live Studionet, run genuine classification and record the real consensus result; do not mock an `AMBIGUOUS` result. Direct Mode may use a deterministic mocked result to verify that the proposal becomes terminal, cannot be classified again, and cannot be voted on. Execute every event-producing write and inspect the resulting execution events.
+
+For the same classified proposal, execute the direct-override lifecycle: proxy vote, direct voter replacement, old tally decrement, new tally increment, and rejection of a later proxy vote.
 
 ## Evidence to save
 

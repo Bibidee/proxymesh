@@ -25,6 +25,6 @@ The exact GenLayer CLI 0.39.1 is active on Studionet 61999 using the funded, unl
 
 ## CI and release evidence
 
-The repository is pushed to `https://github.com/Bibidee/proxymesh`; remote source verification is required for each release commit. GitHub Actions runs the reproducible Python preflight, compile, and model/source-invariant test gate. The GenVM CLI/linter stack is host-provided rather than a reproducible package in this workflow, so its four checks are recorded from the verified deployment environment and are not replaced by a flaky CI installation.
+The repository is pushed to `https://github.com/Bibidee/proxymesh`; remote source verification is required for each release commit. GitHub Actions pins and downloads GenVM v0.2.12, installs `genlayer-test==0.29.2` and `genvm-linter==0.11.0`, and runs preflight, compile, AST safety check, validate, schema, typecheck, model/source-invariant tests and Direct Mode execution tests.
 
 Submission readiness remains blocked until the hardening tests pass, both canonical contracts exist on Studionet, schema and view calls succeed, and the live lifecycle passes.

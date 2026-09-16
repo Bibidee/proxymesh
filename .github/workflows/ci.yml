@@ -16,10 +16,10 @@ jobs:
       - run: genvm-lint download --version "$GENVM_VERSION"
       - run: python scripts/preflight.py
       - run: python -m compileall -q contracts scripts tests
-      - run: genvm-lint validate contracts/proxymesh.py
+      - run: genvm-lint check contracts/proxymesh.py
       - run: genvm-lint schema contracts/proxymesh.py
       - run: genvm-lint typecheck contracts/proxymesh.py
-      - run: genvm-lint validate contracts/proxy_vote_book.py
+      - run: genvm-lint check contracts/proxy_vote_book.py
       - run: genvm-lint schema contracts/proxy_vote_book.py
       - run: genvm-lint typecheck contracts/proxy_vote_book.py
       - run: python -m pytest -q
