@@ -28,13 +28,13 @@ if sys.platform == "win32":
 
 
 def _mesh(direct_deploy):
-    try:
-        return direct_deploy("contracts/proxymesh.py")
-    except (FileNotFoundError, ValueError, KeyError) as exc:
-        message = str(exc).lower()
-        if "runner" in message or "tar" in message or "sdk" in message:
-            pytest.skip(f"exact pinned GenVM runner artifact unavailable: {exc}")
-        raise
+    # The contract's pinned runner is shipped in the v0.2.12 bundle.  Passing
+    # this explicitly prevents gltest from probing the incompatible v0.3
+    # release, whose legacy archive URL no longer exists.
+    return direct_deploy(
+        "contracts/proxymesh.py",
+        sdk_version=os.environ.get("GENVM_VERSION", "v0.2.12"),
+    )
 
 
 def _contract_address(mesh, value):

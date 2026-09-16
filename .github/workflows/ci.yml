@@ -5,12 +5,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      GENVM_VERSION: v0.2.12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install -r requirements-test.txt
+      - run: genvm-lint download --version "$GENVM_VERSION"
       - run: python scripts/preflight.py
       - run: python -m compileall -q contracts scripts tests
+      - run: genvm-lint validate contracts/proxymesh.py
+      - run: genvm-lint schema contracts/proxymesh.py
+      - run: genvm-lint typecheck contracts/proxymesh.py
+      - run: genvm-lint validate contracts/proxy_vote_book.py
+      - run: genvm-lint schema contracts/proxy_vote_book.py
+      - run: genvm-lint typecheck contracts/proxy_vote_book.py
       - run: python -m pytest -q
