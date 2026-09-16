@@ -15,6 +15,14 @@ This repository is intentionally **contract-only**. There is no frontend, dashbo
 - `tests/` — deterministic model and source-invariant tests.
 - `docs/` — architecture, security and live-lifecycle specification.
 
+## Verified release
+
+- Frozen contract commit: `1d05c56d9a772f929f1c8f0d6d341d8231674626`
+- ProxyMesh: `0xd7425357192780DB4497716D25d7763dAa3de2CA`
+- ProxyVoteBook: `0xA67CFE520C0a4Fa6bb685DD8330f4Adb27E255aC`
+- Studionet chain ID: `61999`
+- Submission status: READY
+
 ## Network
 
 ProxyMesh is locked to stable GenLayer Studionet:

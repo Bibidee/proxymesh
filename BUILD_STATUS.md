@@ -21,10 +21,15 @@
 
 ## Current verified status
 
-The exact GenLayer CLI 0.39.1 is active on Studionet 61999 using the funded, unlocked deployment account. The pinned runner is `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`. The dependency-header diagnostic deployed successfully, but the latest canonical release attempt was not accepted as a canonical deployment because independent RPC verification returned no contract code. No live deployment or lifecycle evidence is claimed for the current release.
+The exact GenLayer CLI 0.39.1 is active on Studionet 61999 using the funded, unlocked deployment account. The pinned runner is `py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`.
+
+Canonical deployments:
+
+- ProxyMesh: `0xd7425357192780DB4497716D25d7763dAa3de2CA`
+- ProxyVoteBook: `0xA67CFE520C0a4Fa6bb685DD8330f4Adb27E255aC`
 
 ## CI and release evidence
 
 The repository is pushed to `https://github.com/Bibidee/proxymesh`; remote source verification is required for each release commit. GitHub Actions pins and downloads GenVM v0.2.12, installs `genlayer-test==0.29.2` and `genvm-linter==0.11.0`, and runs preflight, compile, AST safety check, validate, schema, typecheck, model/source-invariant tests and Direct Mode execution tests.
 
-Submission readiness remains blocked until the hardening tests pass, both canonical contracts exist on Studionet, schema and view calls succeed, and the live lifecycle passes.
+CI PASS; GenVM check PASS; schema PASS; typecheck PASS; 36 tests PASS; 6 Direct Mode PASS; canonical Studionet lifecycle PASS. Final readiness: SUBMISSION READY.

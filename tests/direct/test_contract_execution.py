@@ -153,18 +153,25 @@ def test_real_proxymesh_delegation_boundaries(direct_vm, direct_deploy):
     with direct_vm.expect_revert("ontology owner only"):
         mesh.add_domain(ontology_id, "OTHER", "A non-owner must not mutate the ontology.")
 
-    chain = [_contract_address(mesh, create_address(f"depth-{i}")) for i in range(17)]
+    chain = [_contract_address(mesh, create_address(f"A{i}")) for i in range(16)]
+    new_root = _contract_address(mesh, create_address("NEW_ROOT"))
     for i in range(15):
         direct_vm.sender = chain[i]
         mesh.set_delegation(ontology_id, 0, chain[i + 1], 0)
-    direct_vm.sender = chain[15]
     resolved = mesh.resolve_domain(ontology_id, 0, chain[0])
-    assert resolved["status"] == 2 and resolved["hops"] == 15
-    before = mesh.get_delegation(ontology_id, 0, chain[15])
-    direct_vm.sender = chain[16]
+    assert resolved["status"] == 2
+    assert resolved["representative"].lower() == str(chain[15]).lower()
+    assert resolved["hops"] == 15
+    before_root = mesh.get_delegation(ontology_id, 0, new_root)
+    assert before_root == {"exists": False}
+    direct_vm.sender = new_root
     with direct_vm.expect_revert("max depth"):
         mesh.set_delegation(ontology_id, 0, chain[0], 0)
-    assert mesh.get_delegation(ontology_id, 0, chain[15]) == before
+    assert mesh.get_delegation(ontology_id, 0, new_root) == before_root
+    resolved_after = mesh.resolve_domain(ontology_id, 0, chain[0])
+    assert resolved_after["status"] == 2
+    assert resolved_after["representative"].lower() == str(chain[15]).lower()
+    assert resolved_after["hops"] == 15
 
     self_delegate = _contract_address(mesh, create_address("self-delegate"))
     direct_vm.sender = self_delegate

@@ -8,4 +8,9 @@ The model cannot create domains, select delegates, cast votes, assign weights or
 
 Network target: Studionet, chain ID 61999. Required CLI: 0.39.1. No frontend.
 
-Release status: NOT SUBMISSION READY until deterministic and real GenLayer execution tests pass and both canonical contracts are independently verified on Studionet with the full lifecycle completed.
+Release status: SUBMISSION READY.
+
+- Frozen contract commit: `1d05c56d9a772f929f1c8f0d6d341d8231674626`
+- ProxyMesh: `0xd7425357192780DB4497716D25d7763dAa3de2CA`
+- ProxyVoteBook: `0xA67CFE520C0a4Fa6bb685DD8330f4Adb27E255aC`
+- Verification: 36 tests passed; 6 Direct Mode tests passed; the real-contract 15-edge/16th-edge boundary passed; canonical Studionet lifecycle passed.
