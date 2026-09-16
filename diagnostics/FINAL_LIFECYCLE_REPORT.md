@@ -65,4 +65,22 @@ The redundant hosted 15-account stress test was not used as readiness evidence b
 
 SUBMISSION READY
 
-This report is intentionally uncommitted.
+## GenLayer Classification Evidence
+
+This is real canonical Studionet judgment evidence against ProxyMesh.
+
+- Proposal ID: `4`
+- Proposal creation tx: `0x80b0043867512c9aee4b2ebd0c832ace253378c62e95f2fa937cb289c41da6fe`
+- Classification tx: [`0xc657a1044e1d1ef29c599204480170827790f2affc93094fcd1877bae77cabeb`](https://explorer-studio.genlayer.com/tx/0xc657a1044e1d1ef29c599204480170827790f2affc93094fcd1877bae77cabeb)
+- Target: `0xd7425357192780DB4497716D25d7763dAa3de2CA`
+- Method: `classify_proposal(4)`
+- Finality: `FINALIZED`
+- Consensus: `MAJORITY_AGREE`
+- GenVM execution: `SUCCESS`
+- Proposal status: `1` (`PROPOSAL_CLASSIFIED`)
+- Domain mask: `3`
+- Domain slots: `[0, 1]`
+- Classification hash: `ef2f3fe0c792f955467717c1c233a769ad7710fbe003fffc0f333d3247e4e785`
+- Classification reason: `The proposal explicitly requests a treasury spending change (Treasury) and a security emergency permission update (Security).`
+
+The classification transaction is finalized and the post-classification state was read from the canonical contract.
